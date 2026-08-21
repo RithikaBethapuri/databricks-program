@@ -1,0 +1,19 @@
+{
+	"name": "DS_ADLS_Raw_Carts_Folder",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_ADLS_Raw",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "api/dummyjson/carts",
+				"fileSystem": "raw"
+			}
+		},
+		"schema": {}
+	}
+}
