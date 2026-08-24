@@ -19,9 +19,6 @@
 				},
 				{
 					"name": "FlattenProducts"
-				},
-				{
-					"name": "MapColumns"
 				}
 			],
 			"scriptLines": [
@@ -52,8 +49,7 @@
 				"          total",
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
-				"     skipDuplicateMapOutputs: false) ~> FlattenProducts",
-				"FlattenProducts derive(cart_id = carts.id) ~> MapColumns"
+				"     skipDuplicateMapOutputs: false) ~> FlattenProducts"
 			]
 		}
 	}
