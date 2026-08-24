@@ -1,0 +1,60 @@
+{
+	"name": "df_flatten_carts",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_ADLS_Raw_Carts_Folder",
+						"type": "DatasetReference"
+					},
+					"name": "RawCarts"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "FlattenCarts"
+				},
+				{
+					"name": "FlattenProducts"
+				},
+				{
+					"name": "MapColumns"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          carts as (discountedTotal as double, id as short, products as (discountPercentage as double, discountedTotal as double, id as short, price as double, quantity as short, thumbnail as string, title as string, total as double)[], total as double, totalProducts as short, totalQuantity as short, userId as short)[],",
+				"          limit as short,",
+				"          skip as boolean,",
+				"          total as short",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     documentForm: 'documentPerLine') ~> RawCarts",
+				"RawCarts foldDown(unroll(carts),",
+				"     mapColumn(",
+				"          carts,",
+				"          limit,",
+				"          skip,",
+				"          total",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> FlattenCarts",
+				"FlattenCarts foldDown(unroll(carts.products),",
+				"     mapColumn(",
+				"          carts = carts.products,",
+				"          limit,",
+				"          skip,",
+				"          total",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> FlattenProducts",
+				"FlattenProducts derive(cart_id = carts.id) ~> MapColumns"
+			]
+		}
+	}
+}
