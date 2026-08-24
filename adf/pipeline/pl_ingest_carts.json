@@ -5,7 +5,14 @@
 			{
 				"name": "Copy_Carts_To_Raw",
 				"type": "Copy",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "GetWatermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -148,6 +155,31 @@
 				"linkedServiceName": {
 					"referenceName": "LS_AzureSQL",
 					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "GetWatermark",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": "SELECT WatermarkValue\nFROM dbo.ETL_Watermark\nWHERE SourceSystem = 'DummyJSON'\n  AND EntityName = 'Carts'",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_SQL_ETL_Watermark",
+						"type": "DatasetReference"
+					}
 				}
 			}
 		],
