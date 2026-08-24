@@ -133,7 +133,10 @@
 							"type": "String"
 						},
 						"NewWatermark": {
-							"value": "@u",
+							"value": {
+								"value": "@utcNow()",
+								"type": "Expression"
+							},
 							"type": "String"
 						},
 						"SourceSystem": {
