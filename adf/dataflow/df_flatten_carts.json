@@ -12,13 +12,31 @@
 					"name": "RawCarts"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_SQL_stg_CartProducts",
+						"type": "DatasetReference"
+					},
+					"name": "SinkStaging",
+					"description": "Export data to DS_SQL_stg_CartProducts\n"
+				}
+			],
 			"transformations": [
 				{
 					"name": "FlattenCarts"
 				},
 				{
-					"name": "FlattenProducts"
+					"name": "FlattenProducts",
+					"description": "Unrolling arrays from products to  with columns 'id, products, total, discountedTotal, userId, totalProducts, totalQuantity'"
+				},
+				{
+					"name": "MapColumns",
+					"description": "Creating/updating the columns 'id, products, total, discountedTotal, userId, totalProducts, totalQuantity, cart_id, user_id, product_id, product_title, quantity, price, line_total, cart_total, ingest_ts, source_file'"
+				},
+				{
+					"name": "select1",
+					"description": "Renaming MapColumns to select1 with columns 'id, total, discountedTotal, userId, totalProducts, totalQuantity, cart_id, user_id, product_id, product_title, quantity, price, line_total, cart_total, ingest_ts, source_file'"
 				}
 			],
 			"scriptLines": [
@@ -34,22 +52,93 @@
 				"     documentForm: 'documentPerLine') ~> RawCarts",
 				"RawCarts foldDown(unroll(carts),",
 				"     mapColumn(",
-				"          carts,",
-				"          limit,",
-				"          skip,",
-				"          total",
+				"          discountedTotal = carts.discountedTotal,",
+				"          id = carts.id,",
+				"          products = carts.products,",
+				"          total = carts.total,",
+				"          totalProducts = carts.totalProducts,",
+				"          totalQuantity = carts.totalQuantity,",
+				"          userId = carts.userId",
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
 				"     skipDuplicateMapOutputs: false) ~> FlattenCarts",
-				"FlattenCarts foldDown(unroll(carts.products),",
+				"FlattenCarts foldDown(unroll(products),",
 				"     mapColumn(",
-				"          carts = carts.products,",
-				"          limit,",
-				"          skip,",
-				"          total",
+				"          discountedTotal,",
+				"          id,",
+				"          products,",
+				"          total,",
+				"          totalProducts,",
+				"          totalQuantity,",
+				"          userId",
 				"     ),",
 				"     skipDuplicateMapInputs: false,",
-				"     skipDuplicateMapOutputs: false) ~> FlattenProducts"
+				"     skipDuplicateMapOutputs: false) ~> FlattenProducts",
+				"FlattenProducts derive(cart_id = id,",
+				"          user_id = userId,",
+				"          product_id = products.id,",
+				"          product_title = products.title,",
+				"          quantity = toInteger(products.quantity),",
+				"          price = toDecimal(products.price, 18, 4),",
+				"          line_total = toDecimal(products.total, 18, 4),",
+				"          cart_total = toDecimal(total, 18, 4),",
+				"          ingest_ts = currentUTC(),",
+				"          source_file = '') ~> MapColumns",
+				"MapColumns select(mapColumn(",
+				"          discountedTotal,",
+				"          id,",
+				"          products,",
+				"          total,",
+				"          totalProducts,",
+				"          totalQuantity,",
+				"          userId,",
+				"          cart_id,",
+				"          user_id,",
+				"          product_id,",
+				"          product_title,",
+				"          quantity,",
+				"          price,",
+				"          line_total,",
+				"          cart_total,",
+				"          ingest_ts,",
+				"          source_file",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          cart_id as long,",
+				"          user_id as long,",
+				"          product_id as long,",
+				"          product_title as string,",
+				"          quantity as integer,",
+				"          price as decimal(18,4),",
+				"          line_total as decimal(18,4),",
+				"          cart_total as decimal(18,4),",
+				"          ingest_ts as timestamp,",
+				"          source_file as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     truncate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          cart_id,",
+				"          user_id,",
+				"          product_id,",
+				"          product_title,",
+				"          quantity,",
+				"          price,",
+				"          line_total,",
+				"          cart_total,",
+				"          ingest_ts",
+				"     )) ~> SinkStaging"
 			]
 		}
 	}

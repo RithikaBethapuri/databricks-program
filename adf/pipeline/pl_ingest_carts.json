@@ -49,7 +49,7 @@
 				]
 			},
 			{
-				"name": "Data flow1",
+				"name": "FlattenAndLoad",
 				"type": "ExecuteDataFlow",
 				"dependsOn": [
 					{
@@ -68,6 +68,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"dataflow": {
+						"referenceName": "df_flatten_carts",
+						"type": "DataFlowReference"
+					},
 					"compute": {
 						"coreCount": 8,
 						"computeType": "General"
